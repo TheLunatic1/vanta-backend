@@ -6,37 +6,37 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import productRoutes from './routes/productRoutes.js';
 import syncRoutes from './routes/syncRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 
 const app = express();
 
-// IMPORTANT: Middleware first
+// Middleware
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE']
+  origin: '*',                    // Change to your frontend URL later
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
 }));
 
-// DB Connection Middleware (runs before every request)
+// DB Connection Middleware
 app.use(async (req, res, next) => {
   try {
     await connectDB();
     next();
   } catch (error) {
     console.error('DB Connection Failed:', error.message);
-    res.status(500).json({ 
-      message: 'Database connection failed',
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Database connection failed' });
   }
 });
 
-// Routes (after middleware)
+// Routes
 app.use('/api/products', productRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 
