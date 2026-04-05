@@ -23,8 +23,7 @@ async function syncGoogleSheet() {
 
     const rows = response.data.values;
     if (!rows || rows.length <= 1) {
-      console.log('⚠️ No data in sheet');
-      return { success: true, message: 'No data found' };
+      return { success: true, message: 'No data found in sheet' };
     }
 
     let syncedCount = 0;
@@ -55,7 +54,7 @@ async function syncGoogleSheet() {
       syncedCount++;
     }
 
-    console.log(`✅ Synced ${syncedCount} products successfully`);
+    console.log(`✅ Synced ${syncedCount} products`);
     return { success: true, message: `Synced ${syncedCount} products` };
   } catch (error) {
     console.error('❌ Sync Error:', error.message);
@@ -63,7 +62,7 @@ async function syncGoogleSheet() {
   }
 }
 
-// Manual Sync (GET + POST)
+// Manual Sync Routes
 router.get('/manual', async (req, res) => {
   const result = await syncGoogleSheet();
   res.json(result);
@@ -75,17 +74,16 @@ router.post('/manual', async (req, res) => {
 });
 
 router.get('/status', (req, res) => {
-  res.json({ message: 'Auto sync active every 2 minutes' });
+  res.json({ message: 'Sync system is active' });
 });
 
-// Start cron only once
-if (!global.cronInitialized) {
+// Auto Cron - Only run in Local Development (Vercel doesn't need it)
+if (process.env.NODE_ENV !== 'production') {
   cron.schedule('*/2 * * * *', async () => {
-    console.log('🔄 Running scheduled Google Sheet sync...');
+    console.log('🔄 Running scheduled sync...');
     await syncGoogleSheet();
   });
-  global.cronInitialized = true;
-  console.log('⏰ Auto-sync cron job initialized');
+  console.log('⏰ Auto-sync cron initialized (Local only)');
 }
 
 export default router;

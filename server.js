@@ -27,7 +27,7 @@ app.use('/api/sync', syncRoutes);
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Vanta Backend is running 🚀',
-    status: 'healthy'
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -35,19 +35,21 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Start Server + DB + Cron
-const startServer = async () => {
-  try {
-    await connectDB();
-    
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
-      console.log(`🔄 Auto sync scheduled every 2 minutes`);
-    });
-  } catch (error) {
-    console.error('❌ Server startup failed:', error);
-  }
-};
+// Export for Vercel + Start for Local
+export default app;
 
-startServer();
+// Only run server locally (Vercel ignores this)
+if (process.env.NODE_ENV !== 'production') {
+  const startLocalServer = async () => {
+    try {
+      await connectDB();
+      const PORT = process.env.PORT || 5000;
+      app.listen(PORT, () => {
+        console.log(`✅ Server running on http://localhost:${PORT}`);
+      });
+    } catch (error) {
+      console.error('❌ Server startup failed:', error);
+    }
+  };
+  startLocalServer();
+}
