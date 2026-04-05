@@ -1,12 +1,16 @@
 import express from 'express';
 import { google } from 'googleapis';
 import Product from '../models/Product.js';
-import cron from 'node-cron';
 
 const router = express.Router();
 
 async function syncGoogleSheet() {
   try {
+    // Debug log
+    if (!process.env.GOOGLE_PRIVATE_KEY) {
+      throw new Error('GOOGLE_PRIVATE_KEY is missing in environment variables');
+    }
+
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -62,7 +66,7 @@ async function syncGoogleSheet() {
   }
 }
 
-// Manual Sync Routes
+// Manual Sync
 router.get('/manual', async (req, res) => {
   const result = await syncGoogleSheet();
   res.json(result);
@@ -72,18 +76,5 @@ router.post('/manual', async (req, res) => {
   const result = await syncGoogleSheet();
   res.json(result);
 });
-
-router.get('/status', (req, res) => {
-  res.json({ message: 'Sync system is active' });
-});
-
-// Auto Cron - Only run in Local Development (Vercel doesn't need it)
-if (process.env.NODE_ENV !== 'production') {
-  cron.schedule('*/2 * * * *', async () => {
-    console.log('🔄 Running scheduled sync...');
-    await syncGoogleSheet();
-  });
-  console.log('⏰ Auto-sync cron initialized (Local only)');
-}
 
 export default router;
