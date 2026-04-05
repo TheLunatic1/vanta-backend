@@ -35,21 +35,15 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Export for Vercel + Start for Local
-export default app;
+// Connect DB before handling requests (important for Vercel)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('DB Connection Failed:', error.message);
+    res.status(500).json({ message: 'Database connection failed' });
+  }
+});
 
-// Only run server locally (Vercel ignores this)
-if (process.env.NODE_ENV !== 'production') {
-  const startLocalServer = async () => {
-    try {
-      await connectDB();
-      const PORT = process.env.PORT || 5000;
-      app.listen(PORT, () => {
-        console.log(`✅ Server running on http://localhost:${PORT}`);
-      });
-    } catch (error) {
-      console.error('❌ Server startup failed:', error);
-    }
-  };
-  startLocalServer();
-}
+export default app;
