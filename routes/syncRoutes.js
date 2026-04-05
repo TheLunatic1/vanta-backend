@@ -23,15 +23,15 @@ async function syncGoogleSheet() {
 
     const rows = response.data.values;
     if (!rows || rows.length <= 1) {
+      console.log('⚠️ No data in sheet');
       return { success: true, message: 'No data found' };
     }
 
     let syncedCount = 0;
 
-    // Skip header row
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      if (!row[0]) continue; // Skip empty ProductID
+      if (!row[0]) continue;
 
       const productData = {
         productID: row[0],
@@ -63,21 +63,29 @@ async function syncGoogleSheet() {
   }
 }
 
-// Auto Sync every 2 minutes
-cron.schedule('*/2 * * * *', async () => {
-  console.log('🔄 Running scheduled Google Sheet sync...');
-  await syncGoogleSheet();
+// Manual Sync (GET + POST)
+router.get('/manual', async (req, res) => {
+  const result = await syncGoogleSheet();
+  res.json(result);
 });
 
-// Manual Sync Endpoint
 router.post('/manual', async (req, res) => {
   const result = await syncGoogleSheet();
   res.json(result);
 });
 
-// Get sync status
 router.get('/status', (req, res) => {
-  res.json({ message: 'Auto sync is running every 2 minutes' });
+  res.json({ message: 'Auto sync active every 2 minutes' });
 });
+
+// Start cron only once
+if (!global.cronInitialized) {
+  cron.schedule('*/2 * * * *', async () => {
+    console.log('🔄 Running scheduled Google Sheet sync...');
+    await syncGoogleSheet();
+  });
+  global.cronInitialized = true;
+  console.log('⏰ Auto-sync cron job initialized');
+}
 
 export default router;
