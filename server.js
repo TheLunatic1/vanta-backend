@@ -16,7 +16,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: '*',   // Change to your frontend URL later
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -26,7 +26,11 @@ app.use('/api/products', productRoutes);
 app.use('/api/sync', syncRoutes);
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Vanta Backend is running 🚀' });
+  res.json({ 
+    message: 'Vanta Backend is running 🚀',
+    status: 'healthy',
+    autoSync: 'every 2 minutes'
+  });
 });
 
 // 404 Handler
@@ -34,17 +38,4 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const startServer = async () => {
-  try {
-    await connectDB();
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
-      console.log(`🔄 Auto sync running every 2 minutes`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-  }
-};
-
-startServer();
+export default app;
