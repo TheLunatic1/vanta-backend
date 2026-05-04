@@ -1,16 +1,13 @@
+// routes/syncRoutes.js
 import express from 'express';
 import { google } from 'googleapis';
 import Product from '../models/Product.js';
+import cron from 'node-cron';
 
 const router = express.Router();
 
 async function syncGoogleSheet() {
   try {
-    // Debug log
-    if (!process.env.GOOGLE_PRIVATE_KEY) {
-      throw new Error('GOOGLE_PRIVATE_KEY is missing in environment variables');
-    }
-
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -22,7 +19,7 @@ async function syncGoogleSheet() {
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'Sheet1!A:I',
+      range: 'Sheet1!A:J',   // Extended to Column J for Subcategory
     });
 
     const rows = response.data.values;
@@ -34,7 +31,7 @@ async function syncGoogleSheet() {
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      if (!row[0]) continue;
+      if (!row[0]) continue; // Skip empty rows
 
       const productData = {
         productID: row[0],
@@ -44,8 +41,9 @@ async function syncGoogleSheet() {
         salePrice: row[4] ? parseFloat(row[4]) : null,
         images: row[5] ? row[5].split(',').map(url => url.trim()) : [],
         category: row[6],
-        variants: row[7] || '',
-        sku: row[8] || '',
+        subcategory: row[7] || '',           // ← New field from Google Sheet
+        variants: row[8] || '',
+        sku: row[9] || '',
         status: 'Active',
         updatedAt: new Date()
       };
@@ -58,12 +56,20 @@ async function syncGoogleSheet() {
       syncedCount++;
     }
 
-    console.log(`✅ Synced ${syncedCount} products`);
+    console.log(`✅ Synced ${syncedCount} products successfully`);
     return { success: true, message: `Synced ${syncedCount} products` };
   } catch (error) {
     console.error('❌ Sync Error:', error.message);
     return { success: false, message: error.message };
   }
+}
+
+// Auto Sync (Local only for now)
+if (process.env.NODE_ENV !== 'production') {
+  cron.schedule('*/2 * * * *', async () => {
+    console.log('🔄 Running scheduled Google Sheet sync...');
+    await syncGoogleSheet();
+  });
 }
 
 // Manual Sync

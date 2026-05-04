@@ -17,18 +17,17 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(cors({
-  origin: '*',                    // Change to your frontend URL later
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 
-// DB Connection Middleware
+// Database Connection Middleware
 app.use(async (req, res, next) => {
   try {
     await connectDB();
     next();
   } catch (error) {
-    console.error('DB Connection Failed:', error.message);
+    console.error('❌ DB Connection Failed:', error.message);
     res.status(500).json({ message: 'Database connection failed' });
   }
 });
@@ -40,13 +39,32 @@ app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Vanta Backend is running 🚀',
-    environment: process.env.NODE_ENV || 'production'
+    message: '✅ Vanta Backend is running 🚀',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
+
+// ==================== LOCAL DEVELOPMENT ====================
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  
+  const startServer = async () => {
+    try {
+      await connectDB();
+      app.listen(PORT, () => {
+        console.log(`✅ Server running on http://localhost:${PORT}`);
+        console.log(`🔄 Auto sync is active (every 2 minutes)`);
+      });
+    } catch (error) {
+      console.error('❌ Failed to start server:', error);
+    }
+  };
+
+  startServer();
+}
 
 export default app;
