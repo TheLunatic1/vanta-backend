@@ -19,7 +19,7 @@ async function syncGoogleSheet() {
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'Sheet1!A:J',   // Extended to Column J for Subcategory
+      range: 'Sheet1!A:J',
     });
 
     const rows = response.data.values;
@@ -27,11 +27,19 @@ async function syncGoogleSheet() {
       return { success: true, message: 'No data found in sheet' };
     }
 
-    let syncedCount = 0;
+    // Get all ProductIDs currently in Google Sheet
+    const sheetProductIDs = new Set();
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0]) sheetProductIDs.add(rows[i][0]);
+    }
 
+    let syncedCount = 0;
+    let deletedCount = 0;
+
+    // 1. Add / Update products from sheet
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      if (!row[0]) continue; // Skip empty rows
+      if (!row[0]) continue;
 
       const productData = {
         productID: row[0],
@@ -41,7 +49,7 @@ async function syncGoogleSheet() {
         salePrice: row[4] ? parseFloat(row[4]) : null,
         images: row[5] ? row[5].split(',').map(url => url.trim()) : [],
         category: row[6],
-        subcategory: row[7] || '',           // ← New field from Google Sheet
+        subcategory: row[7] || '',
         variants: row[8] || '',
         sku: row[9] || '',
         status: 'Active',
@@ -56,15 +64,29 @@ async function syncGoogleSheet() {
       syncedCount++;
     }
 
-    console.log(`✅ Synced ${syncedCount} products successfully`);
-    return { success: true, message: `Synced ${syncedCount} products` };
+    // 2. Delete products that no longer exist in Google Sheet
+    const allProducts = await Product.find({});
+    for (const product of allProducts) {
+      if (!sheetProductIDs.has(product.productID)) {
+        await Product.findOneAndDelete({ productID: product.productID });
+        deletedCount++;
+        console.log(`🗑️ Deleted product: ${product.productID}`);
+      }
+    }
+
+    console.log(`✅ Synced ${syncedCount} products | Deleted ${deletedCount} old products`);
+    return { 
+      success: true, 
+      message: `Synced ${syncedCount} | Deleted ${deletedCount}` 
+    };
+
   } catch (error) {
     console.error('❌ Sync Error:', error.message);
     return { success: false, message: error.message };
   }
 }
 
-// Auto Sync (Local only for now)
+// Auto Sync (Local only)
 if (process.env.NODE_ENV !== 'production') {
   cron.schedule('*/2 * * * *', async () => {
     console.log('🔄 Running scheduled Google Sheet sync...');
