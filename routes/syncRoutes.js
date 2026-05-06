@@ -27,22 +27,25 @@ async function syncGoogleSheet() {
       return { success: true, message: 'No data found in sheet' };
     }
 
-    // Get all ProductIDs currently in Google Sheet
     const sheetProductIDs = new Set();
-    for (let i = 1; i < rows.length; i++) {
-      if (rows[i][0]) sheetProductIDs.add(rows[i][0]);
-    }
-
     let syncedCount = 0;
     let deletedCount = 0;
 
-    // 1. Add / Update products from sheet
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       if (!row[0]) continue;
 
+      const productID = row[0];
+
+      // Skip special rows (HERO-BG, TRUST-*)
+      if (productID === 'HERO-BG' || productID.startsWith('TRUST-')) {
+        continue;
+      }
+
+      sheetProductIDs.add(productID);
+
       const productData = {
-        productID: row[0],
+        productID: productID,
         title: row[1],
         description: row[2],
         price: parseFloat(row[3]) || 0,
@@ -64,21 +67,17 @@ async function syncGoogleSheet() {
       syncedCount++;
     }
 
-    // 2. Delete products that no longer exist in Google Sheet
+    // Delete products removed from sheet
     const allProducts = await Product.find({});
     for (const product of allProducts) {
       if (!sheetProductIDs.has(product.productID)) {
         await Product.findOneAndDelete({ productID: product.productID });
         deletedCount++;
-        console.log(`🗑️ Deleted product: ${product.productID}`);
       }
     }
 
     console.log(`✅ Synced ${syncedCount} products | Deleted ${deletedCount} old products`);
-    return { 
-      success: true, 
-      message: `Synced ${syncedCount} | Deleted ${deletedCount}` 
-    };
+    return { success: true, message: `Synced ${syncedCount} | Deleted ${deletedCount}` };
 
   } catch (error) {
     console.error('❌ Sync Error:', error.message);
