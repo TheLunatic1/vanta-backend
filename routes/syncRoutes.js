@@ -19,7 +19,7 @@ async function syncGoogleSheet() {
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'Sheet1!A:L',   // Extended to Column L
+      range: 'Sheet1!A:L',   // Extended to Column L for Stock
     });
 
     const rows = response.data.values;
@@ -51,12 +51,11 @@ async function syncGoogleSheet() {
         images: row[5] ? row[5].split(',').map(url => url.trim()) : [],
         category: row[6],
         subcategory: row[7] || '',
-        
-        colors: row[8] || '',      // New Column
-        sizes: row[9] || '',       // New Column
-        
-        variants: row[10] || '',   // Keep for backward
-        sku: row[11] || '',
+        colors: row[8] || '',
+        sizes: row[9] || '',
+        stock: row[10] ? parseInt(row[10]) || 0 : 0,     // ← New Stock Column (K)
+        variants: row[11] || '',
+        sku: row[12] || '' || '',
         status: 'Active',
         updatedAt: new Date()
       };

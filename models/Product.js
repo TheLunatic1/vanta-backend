@@ -16,11 +16,15 @@ const productSchema = new mongoose.Schema({
   },
   
   subcategory: { type: String },
+  colors: { type: String },
+  sizes: { type: String },
   
-  colors: { type: String },      // New - "Black,Navy,White"
-  sizes: { type: String },       // New - "S,M,L,XL"
+  stock: { 
+    type: Number, 
+    default: 0 
+  },   // ← New Stock Field
   
-  variants: { type: String },    // Keep for backward compatibility
+  variants: { type: String },
   sku: { type: String },
   status: { type: String, enum: ['Active', 'Draft'], default: 'Active' },
   
