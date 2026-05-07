@@ -1,3 +1,4 @@
+// models/Product.js
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
@@ -10,14 +11,16 @@ const productSchema = new mongoose.Schema({
   
   category: { 
     type: String, 
-    enum: ['Men', 'Women', 'Others'],
+    enum: ['Men', 'Women', 'Others'], 
     required: true 
   },
   
-  subcategory: { 
-    type: String 
-  },
-  variants: { type: String },
+  subcategory: { type: String },
+  
+  colors: { type: String },      // New - "Black,Navy,White"
+  sizes: { type: String },       // New - "S,M,L,XL"
+  
+  variants: { type: String },    // Keep for backward compatibility
   sku: { type: String },
   status: { type: String, enum: ['Active', 'Draft'], default: 'Active' },
   

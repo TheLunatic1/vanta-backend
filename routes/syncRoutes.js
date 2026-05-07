@@ -19,7 +19,7 @@ async function syncGoogleSheet() {
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'Sheet1!A:J',
+      range: 'Sheet1!A:L',   // Extended to Column L
     });
 
     const rows = response.data.values;
@@ -37,10 +37,8 @@ async function syncGoogleSheet() {
 
       const productID = row[0];
 
-      // Skip special rows (HERO-BG, TRUST-*)
-      if (productID === 'HERO-BG' || productID.startsWith('TRUST-')) {
-        continue;
-      }
+      // Skip special rows
+      if (productID === 'HERO-BG' || productID.startsWith('TRUST-')) continue;
 
       sheetProductIDs.add(productID);
 
@@ -53,8 +51,12 @@ async function syncGoogleSheet() {
         images: row[5] ? row[5].split(',').map(url => url.trim()) : [],
         category: row[6],
         subcategory: row[7] || '',
-        variants: row[8] || '',
-        sku: row[9] || '',
+        
+        colors: row[8] || '',      // New Column
+        sizes: row[9] || '',       // New Column
+        
+        variants: row[10] || '',   // Keep for backward
+        sku: row[11] || '',
         status: 'Active',
         updatedAt: new Date()
       };
@@ -67,7 +69,7 @@ async function syncGoogleSheet() {
       syncedCount++;
     }
 
-    // Delete products removed from sheet
+    // Delete removed products
     const allProducts = await Product.find({});
     for (const product of allProducts) {
       if (!sheetProductIDs.has(product.productID)) {
@@ -76,7 +78,7 @@ async function syncGoogleSheet() {
       }
     }
 
-    console.log(`✅ Synced ${syncedCount} products | Deleted ${deletedCount} old products`);
+    console.log(`✅ Synced ${syncedCount} products | Deleted ${deletedCount}`);
     return { success: true, message: `Synced ${syncedCount} | Deleted ${deletedCount}` };
 
   } catch (error) {
@@ -85,7 +87,7 @@ async function syncGoogleSheet() {
   }
 }
 
-// Auto Sync (Local only)
+// Auto Sync
 if (process.env.NODE_ENV !== 'production') {
   cron.schedule('*/2 * * * *', async () => {
     console.log('🔄 Running scheduled Google Sheet sync...');
