@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 
+// Force Google DNS to bypass ISP SRV query blocking
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 let isConnected = false;
 
 const connectDB = async () => {
@@ -14,6 +17,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 20000,
       socketTimeoutMS: 20000,
       bufferCommands: false,
+      family: 4, // Force IPv4 to fix querySrv ECONNREFUSED issues
     });
     isConnected = true;
     console.log('✅ MongoDB Connected Successfully');

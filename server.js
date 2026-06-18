@@ -5,8 +5,10 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import productRoutes from './routes/productRoutes.js';
-import syncRoutes from './routes/syncRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import schemaRoutes from './routes/schemaRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 
 dotenv.config();
 
@@ -34,8 +36,10 @@ app.use(async (req, res, next) => {
 
 // Routes
 app.use('/api/products', productRoutes);
-app.use('/api/sync', syncRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/schema', schemaRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 
@@ -57,7 +61,6 @@ if (process.env.NODE_ENV !== 'production') {
       await connectDB();
       app.listen(PORT, () => {
         console.log(`✅ Server running on http://localhost:${PORT}`);
-        console.log(`🔄 Auto sync is active (every 2 minutes)`);
       });
     } catch (error) {
       console.error('❌ Failed to start server:', error);

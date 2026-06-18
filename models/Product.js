@@ -28,6 +28,9 @@ const productSchema = new mongoose.Schema({
   sku: { type: String },
   status: { type: String, enum: ['Active', 'Draft'], default: 'Active' },
   
+  // CMS dynamic fields
+  customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
+  
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
