@@ -28,7 +28,8 @@ router.get('/stats', protect, admin, async (req, res) => {
 
     const men = await Product.countDocuments({ category: 'Men' });
     const women = await Product.countDocuments({ category: 'Women' });
-    res.json({ totalProducts, totalUsers, totalOrders, totalRevenue, men, women });
+    const others = await Product.countDocuments({ category: 'Others' });
+    res.json({ totalProducts, totalUsers, totalOrders, totalRevenue, men, women, others });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
