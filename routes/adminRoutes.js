@@ -3,6 +3,9 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import { protect, admin } from '../middleware/auth.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const router = express.Router();
 
@@ -36,3 +39,4 @@ router.get('/stats', protect, admin, async (req, res) => {
 });
 
 export default router;
+
